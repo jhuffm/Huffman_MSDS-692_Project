@@ -10,6 +10,8 @@ from sklearn.linear_model import SGDClassifier
 from sklearn.svm import SVC
 from sklearn.ensemble import ExtraTreesClassifier
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import RandomizedSearchCV
+from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import roc_curve, roc_auc_score
 #from sklearn import metrics
 import matplotlib.pyplot as plt
@@ -143,3 +145,57 @@ print(roc_auc_score(y_test, y_preds3))
 print(roc_auc_score(y_test, y_preds4))
 print(roc_auc_score(y_test, y_preds5))
 print(roc_auc_score(y_test, y_preds6))
+
+### Parameter Optimization using RandomizedSearchCV()
+## Choosing logistic regression and random forest to optimize
+
+parameter_grid = {'estimator__C': [0.001,0.01,0.1,1,10,100],
+            'estimator__penalty' : ['l1', 'l2']}
+grid_regres_class = GridSearchCV(
+    estimator =  MultiOutputClassifier(LogisticRegression(solver='saga', max_iter=200)),
+    param_grid = parameter_grid,
+    scoring = 'roc_auc',
+    n_jobs = 2,
+    refit = True,
+    cv = 5, 
+    return_train_score = True)
+
+grid_regres_class.fit(X_train, y_train)
+
+cv_results_df = pd.DataFrame(grid_regres_class.cv_results_)
+best_row = cv_results_df[cv_results_df["rank_test_score"]==1]
+print(best_row)
+
+preds7 = grid_regres_class.predict_proba(X_test)
+y_preds7 = prediction(preds7)
+print(roc_auc_score(y_test, y_preds7))
+
+##Random Forest tuning
+n_estimators = [10, 50, 100, 200, 400, 600, 800, 1000, 2000]
+max_depth = [10, 20, 30, 40, 60, 80, 100, None]
+min_samples_split = [2, 5, 10, 20, 50]
+min_samples_leaf = [1, 2, 4]
+max_features = ['auto', 'log2']
+random_grid = {'estimator__n_estimators': n_estimators,
+               'estimator__max_depth': max_depth,
+               'estimator__min_samples_split': min_samples_split,
+               'estimator__min_samples_leaf': min_samples_leaf,
+               'estimator__max_features': max_features}
+
+random_forest_class = RandomizedSearchCV(
+    estimator = MultiOutputClassifier(RandomForestClassifier()),
+    param_distributions = random_grid,
+    n_iter = 1,
+    scoring = 'roc_auc',
+    n_jobs = 4,
+    refit = True,
+    cv = 5, 
+    random_state = 1,
+    return_train_score = True)
+random_forest_class.fit(X_train, y_train)
+
+print(random_forest_class.best_params_)
+
+preds8 = random_forest_class.predict_proba(X_test)
+y_preds8 = prediction(preds8)
+print(roc_auc_score(y_test, y_preds8))
