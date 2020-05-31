@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import seaborn as sns
+from sklearn.impute import KNNImputer
 from sklearn.multioutput import MultiOutputClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
@@ -13,6 +14,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import roc_curve, roc_auc_score
+from scipy.stats import uniform
 #from sklearn import metrics
 import matplotlib.pyplot as plt
 
@@ -29,23 +31,10 @@ print(training_set_features.head())
 print(training_set_labels.head())
 print(test_set_features.head())
 
-#print(training_set_features.dtypes) #redundant with below
 print(training_set_features.info())
 print(training_set_features.describe())
 print(training_set_features.isnull().sum())
 training_set_features = training_set_features.drop(columns=['health_insurance', 'employment_industry', 'employment_occupation'])
-print(training_set_features.isnull().sum())
-
-###Impute missing values using mode
-cols = ["h1n1_concern", "h1n1_knowledge", "behavioral_antiviral_meds", "behavioral_avoidance",
-        "behavioral_face_mask", "behavioral_wash_hands", "behavioral_large_gatherings", "behavioral_outside_home",
-        "behavioral_touch_face", "doctor_recc_h1n1", "doctor_recc_seasonal", "chronic_med_condition",
-        "child_under_6_months", "health_worker", "opinion_h1n1_vacc_effective", "opinion_h1n1_risk", 
-        "opinion_h1n1_sick_from_vacc", "opinion_seas_vacc_effective", "opinion_seas_risk",
-        "opinion_seas_sick_from_vacc", "age_group", "education", "race", "sex", "income_poverty",
-        "marital_status", "rent_or_own", "employment_status", "hhs_geo_region", "census_msa", 
-        "household_adults", "household_children"]
-training_set_features[cols]=training_set_features[cols].fillna(training_set_features.mode().iloc[0])
 print(training_set_features.isnull().sum())
 
 ##Encode categorical data
@@ -84,9 +73,15 @@ htmp.set_xticklabels(
     horizontalalignment='right'
 );
 plt.show()
+
 ##One hot encode nominal categorical variables
 training_set_features = pd.get_dummies(training_set_features, columns=['race', 'sex', 'marital_status', 'rent_or_own', 'employment_status', 'hhs_geo_region', 'census_msa'], 
                                        prefix = ['race', 'sex', 'marital_status', 'rent_or_own', 'employment_status', 'hhs_geo_region', 'census_msa'])
+
+##Impute missing values using KNN
+imputer = KNNImputer(n_neighbors=10)
+training_set_features = imputer.fit_transform(training_set_features)
+print(training_set_features.isnull().sum())
 
 ##Scale Data
 scale = StandardScaler()
@@ -146,18 +141,19 @@ print(roc_auc_score(y_test, y_preds4))
 print(roc_auc_score(y_test, y_preds5))
 print(roc_auc_score(y_test, y_preds6))
 
-### Parameter Optimization using RandomizedSearchCV()
+### Parameter Optimization using GridSearchCV() and RandomizedSearchCV()
 ## Choosing logistic regression and random forest to optimize
 
 parameter_grid = {'estimator__C': [0.001,0.01,0.1,1,10,100],
             'estimator__penalty' : ['l1', 'l2']}
+
 grid_regres_class = GridSearchCV(
     estimator =  MultiOutputClassifier(LogisticRegression(solver='saga', max_iter=200)),
     param_grid = parameter_grid,
     scoring = 'roc_auc',
     n_jobs = 2,
     refit = True,
-    cv = 5, 
+    cv = 5,
     return_train_score = True)
 
 grid_regres_class.fit(X_train, y_train)
@@ -170,7 +166,7 @@ preds7 = grid_regres_class.predict_proba(X_test)
 y_preds7 = prediction(preds7)
 print(roc_auc_score(y_test, y_preds7))
 
-##Random Forest tuning
+## Random Forest parameter optimization
 n_estimators = [10, 50, 100, 200, 400, 600, 800, 1000, 2000]
 max_depth = [10, 20, 30, 40, 60, 80, 100, None]
 min_samples_split = [2, 5, 10, 20, 50]
@@ -182,14 +178,15 @@ random_grid = {'estimator__n_estimators': n_estimators,
                'estimator__min_samples_leaf': min_samples_leaf,
                'estimator__max_features': max_features}
 
+
 random_forest_class = RandomizedSearchCV(
     estimator = MultiOutputClassifier(RandomForestClassifier()),
     param_distributions = random_grid,
-    n_iter = 1,
+    n_iter = 10,
     scoring = 'roc_auc',
     n_jobs = 4,
     refit = True,
-    cv = 5, 
+    cv = 5,
     random_state = 1,
     return_train_score = True)
 random_forest_class.fit(X_train, y_train)
