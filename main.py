@@ -15,6 +15,8 @@ from sklearn.model_selection import RandomizedSearchCV
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import roc_curve, roc_auc_score
 from scipy.stats import uniform
+from skopt import BayesSearchCV
+
 #from sklearn import metrics
 import matplotlib.pyplot as plt
 
@@ -37,9 +39,44 @@ print(training_set_features.isnull().sum())
 training_set_features = training_set_features.drop(columns=['health_insurance', 'employment_industry', 'employment_occupation'])
 print(training_set_features.isnull().sum())
 
+##Visualizations using Seaborn
+joined_set = training_set_features.join(training_set_labels)
+f, axes = plt.subplots(6,2, sharex = False, sharey=False)
+
+sns.countplot( x = joined_set['opinion_seas_risk'], hue =joined_set['h1n1_vaccine'], data=joined_set, ax = axes[0,0]).legend(loc='upper center')
+sns.countplot( x = joined_set['opinion_seas_risk'], hue =joined_set['seasonal_vaccine'], data=joined_set, ax = axes[0,1]).legend(loc='upper center')
+
+sns.countplot( x = joined_set['opinion_h1n1_risk'], hue =joined_set['h1n1_vaccine'], data=joined_set, ax = axes[1,0]).legend_.remove()
+sns.countplot( x = joined_set['opinion_h1n1_risk'], hue =joined_set['seasonal_vaccine'], data=joined_set, ax = axes[1,1]).legend_.remove()
+
+sns.countplot( x = joined_set['education'], hue =joined_set['h1n1_vaccine'], data=joined_set, ax = axes[2,0]).legend_.remove()
+sns.countplot( x = joined_set['education'], hue =joined_set['seasonal_vaccine'], data=joined_set, ax = axes[2,1]).legend_.remove()
+
+sns.countplot( x = joined_set['age_group'], hue =joined_set['h1n1_vaccine'], data=joined_set, ax = axes[3,0]).legend_.remove()
+sns.countplot( x = joined_set['age_group'], hue =joined_set['seasonal_vaccine'], data=joined_set, ax = axes[3,1]).legend_.remove()
+
+sns.countplot( x = joined_set['behavioral_face_mask'], hue =joined_set['h1n1_vaccine'], data=joined_set, ax = axes[4,0]).legend_.remove()
+sns.countplot( x = joined_set['behavioral_face_mask'], hue =joined_set['seasonal_vaccine'], data=joined_set, ax = axes[4,1]).legend_.remove()
+
+sns.countplot( x = joined_set['behavioral_wash_hands'], hue =joined_set['h1n1_vaccine'], data=joined_set, ax = axes[5,0]).legend_.remove()
+sns.countplot( x = joined_set['behavioral_wash_hands'], hue =joined_set['seasonal_vaccine'], data=joined_set, ax = axes[5,1]).legend_.remove()
+
+plt.show()
+
 ##Encode categorical data
 # Ordinal data: age_group, education, income_poverty
 # Nominal data: race, sex, marital_status, hhs_geo_region, census_msa
+
+cols = ["h1n1_concern", "h1n1_knowledge", "behavioral_antiviral_meds", "behavioral_avoidance",
+        "behavioral_face_mask", "behavioral_wash_hands", "behavioral_large_gatherings", "behavioral_outside_home",
+        "behavioral_touch_face", "doctor_recc_h1n1", "doctor_recc_seasonal", "chronic_med_condition",
+        "child_under_6_months", "health_worker", "opinion_h1n1_vacc_effective", "opinion_h1n1_risk", 
+        "opinion_h1n1_sick_from_vacc", "opinion_seas_vacc_effective", "opinion_seas_risk",
+        "opinion_seas_sick_from_vacc", "age_group", "education", "race", "sex", "income_poverty",
+        "marital_status", "rent_or_own", "employment_status", "hhs_geo_region", "census_msa", 
+        "household_adults", "household_children"]
+training_set_features[cols]=training_set_features[cols].fillna(training_set_features.mean())
+print(training_set_features.isnull().sum())
 
 # Using pandas factorize method for ordinal data -- factorizing column data
 categories = pd.Categorical(training_set_features['age_group'], categories=['18 - 34 Years', '35 - 44 Years', '45 - 54 Years', '55 - 64 Years', '65+ Years'], ordered=True)
@@ -55,8 +92,7 @@ labels, unique = pd.factorize(categories, sort=True)
 training_set_features['income_poverty'] = labels
 
 ###Plot correlations in training set
-joined_set = training_set_features.join(training_set_labels)
-print(joined_set.head())
+#print(joined_set.head())
 fig, ax = plt.subplots(figsize=(20,20))
 corr = joined_set.corr()
 htmp = sns.heatmap(
@@ -77,11 +113,6 @@ plt.show()
 ##One hot encode nominal categorical variables
 training_set_features = pd.get_dummies(training_set_features, columns=['race', 'sex', 'marital_status', 'rent_or_own', 'employment_status', 'hhs_geo_region', 'census_msa'], 
                                        prefix = ['race', 'sex', 'marital_status', 'rent_or_own', 'employment_status', 'hhs_geo_region', 'census_msa'])
-
-##Impute missing values using KNN
-imputer = KNNImputer(n_neighbors=10)
-training_set_features = imputer.fit_transform(training_set_features)
-print(training_set_features.isnull().sum())
 
 ##Scale Data
 scale = StandardScaler()
@@ -143,7 +174,6 @@ print(roc_auc_score(y_test, y_preds6))
 
 ### Parameter Optimization using GridSearchCV() and RandomizedSearchCV()
 ## Choosing logistic regression and random forest to optimize
-
 parameter_grid = {'estimator__C': [0.001,0.01,0.1,1,10,100],
             'estimator__penalty' : ['l1', 'l2']}
 
@@ -166,33 +196,33 @@ preds7 = grid_regres_class.predict_proba(X_test)
 y_preds7 = prediction(preds7)
 print(roc_auc_score(y_test, y_preds7))
 
-## Random Forest parameter optimization
+## Random Forest parameter optimization w/ Baysean Method
 n_estimators = [10, 50, 100, 200, 400, 600, 800, 1000, 2000]
-max_depth = [10, 20, 30, 40, 60, 80, 100, None]
+max_depth = [10, 20, 30, 40, 60, 80, 100, 1000]
 min_samples_split = [2, 5, 10, 20, 50]
 min_samples_leaf = [1, 2, 4]
 max_features = ['auto', 'log2']
-random_grid = {'estimator__n_estimators': n_estimators,
+param_grid = {'estimator__n_estimators': n_estimators,
                'estimator__max_depth': max_depth,
                'estimator__min_samples_split': min_samples_split,
                'estimator__min_samples_leaf': min_samples_leaf,
                'estimator__max_features': max_features}
 
 
-random_forest_class = RandomizedSearchCV(
-    estimator = MultiOutputClassifier(RandomForestClassifier()),
-    param_distributions = random_grid,
-    n_iter = 10,
+random_forest_class = BayesSearchCV(
+    MultiOutputClassifier(RandomForestClassifier()),
+    param_grid,
+    n_iter = 50,
     scoring = 'roc_auc',
     n_jobs = 4,
     refit = True,
-    cv = 5,
+    cv = 3,
     random_state = 1,
     return_train_score = True)
 random_forest_class.fit(X_train, y_train)
 
-print(random_forest_class.best_params_)
+print(random_forest_class.best_estimator_)
 
-preds8 = random_forest_class.predict_proba(X_test)
-y_preds8 = prediction(preds8)
-print(roc_auc_score(y_test, y_preds8))
+preds9 = random_forest_class.predict_proba(X_test)
+y_preds9 = prediction(preds9)
+print(roc_auc_score(y_test, y_preds9))
