@@ -10,7 +10,7 @@ us_state_map.plot()
 # Convert 'NAME' column to uppercase to match CDC data
 us_state_map['NAME'] = us_state_map['NAME'].str.upper()
 print(us_state_map)
-# Drop Puerto Rico, Hawaii, and Alaska to keep the graph to the continental US in order to keep the map more compact
+# Drop Puerto Rico, Hawaii, and Alaska to keep the graph to the contiguous US in order to keep the map more compact
 us_state_map = us_state_map.drop(us_state_map.index[[1,21,50]])
 
 # Import CDC data, remove NA values and calculate ratio of H1N1 vaccines in each state
