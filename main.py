@@ -22,8 +22,6 @@ training_set_features = pd.read_csv("https://s3.amazonaws.com/drivendata-prod/da
 training_set_labels = pd.read_csv("https://s3.amazonaws.com/drivendata-prod/data/66/public/training_set_labels.csv", index_col = 'respondent_id')
 test_set_features = pd.read_csv("https://s3.amazonaws.com/drivendata-prod/data/66/public/test_set_features.csv", index_col = 'respondent_id')
 submission_format = pd.read_csv("https://s3.amazonaws.com/drivendata-prod/data/66/public/submission_format.csv", index_col = 'respondent_id')
-training_set_features.plot(kind = 'hist', subplots=True, layout=(5,5), figsize=(20,20), sharey=True, title = 'Frequency Plots of Categorical Variables')
-plt.show()
 
 ##Exploratory Data Analysis
 print(training_set_features.head())
@@ -36,7 +34,10 @@ print(training_set_features.describe())
 print(training_set_labels['h1n1_vaccine'].value_counts())
 print(training_set_labels['seasonal_vaccine'].value_counts())
 
-##Visualizations using Seaborn
+#training_set_features.plot(kind = 'hist', subplots=True, layout=(5,5), figsize=(20,20), sharey=True, title = 'Frequency Plots of Categorical Variables')
+#plt.show()
+
+##Visualizations
 joined_set = training_set_features.join(training_set_labels)
 joined_set['h1n1_vaccine'] = joined_set['h1n1_vaccine'].replace(0, 'Not Vaccinated')
 joined_set['h1n1_vaccine'] = joined_set['h1n1_vaccine'].replace(1, 'Vaccinated')
@@ -115,8 +116,7 @@ categories = pd.Categorical(test_set_features['income_poverty'], categories=orde
 labels, unique = pd.factorize(categories, sort=True)
 test_set_features['income_poverty'] = labels
 
-###Plot correlations in training set
-#print(joined_set.head())
+###Plot correlations in training set to see if any variables are highly correlated
 fig, ax = plt.subplots(figsize=(20,20))
 corr = joined_set.corr()
 htmp = sns.heatmap(
@@ -146,6 +146,7 @@ scaled_training_features =  scale.fit_transform(training_set_features)
 scaled_test_features =  scale.fit_transform(test_set_features)
 
 ###Build Prediction models
+
 #Split into test and training set using 80% for training and 20% for testing so that we can keep test_set_labels data outside of the model
 X_train, X_test, y_train, y_test = train_test_split(scaled_training_features, training_set_labels, test_size=0.2, random_state=0)
 
@@ -182,7 +183,6 @@ fit_model(SVC_model, X_train, y_train, X_test)
 Extra_trees_classifier = MultiOutputClassifier(ExtraTreesClassifier())
 fit_model(Extra_trees_classifier, X_train, y_train, X_test)
 
-
 ### Parameter Optimization using GridSearchCV() and BayesSearchCV()
 ## Choosing logistic regression and random forest to optimize
 parameter_grid = {'estimator__C': [0.001,0.01,0.1,1,10,100],
@@ -217,7 +217,7 @@ param_grid = {'estimator__n_estimators': n_estimators,
 random_forest_Bayes_optimized_classifier = BayesSearchCV(
     MultiOutputClassifier(RandomForestClassifier()),
     param_grid,
-    n_iter = 50,
+    n_iter = 100,
     scoring = 'roc_auc',
     n_jobs = 4,
     refit = True,
@@ -229,11 +229,9 @@ fit_model(random_forest_Bayes_optimized_classifier, X_train, y_train, X_test)
 print(random_forest_Bayes_optimized_classifier.best_estimator_)
 
 ## Retrain best model on full dataset and fit to test_set_features
-# Need to add best model here, logistic regression is just a placeholder for now
-
-#Logistic_regression = MultiOutputClassifier(LogisticRegression()) 
-#Logistic_regression.fit(scaled_training_features, training_set_labels)
-#preds = Logistic_regression.predict_proba(scaled_test_features)
+random_forest_optim = MultiOutputClassifier(RandomForestClassifier(n_estimators = 2000, max_depth = 20, min_samples_split = 20, min_samples_leaf = 4, max_features= 'auto')) 
+random_forest_optim.fit(scaled_training_features, training_set_labels)
+preds = random_forest_optim.predict_proba(scaled_test_features)
 
 ## Format for submittal on DrivenData
 #Code copied from DrivenData to ensure correct format for submittal
