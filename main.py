@@ -47,7 +47,7 @@ joined_set['seasonal_vaccine'] = joined_set['seasonal_vaccine'].replace(1, 'Vacc
 order_age = ['18 - 34 Years', '35 - 44 Years', '45 - 54 Years', '55 - 64 Years', '65+ Years']
 order_education = ['< 12 Years', '12 Years', 'Some College', 'College Graduate']
 order_poverty = ['Below Poverty', '<= $75,000, Above Poverty', '> $75,000']
-f, axes = plt.subplots(6,2, sharex = False, sharey=False, figsize = (7,10))
+f, axes = plt.subplots(4,2, sharex = False, sharey=False, figsize = (7,10))
 
 sns.countplot( x = joined_set['opinion_seas_risk'], hue =joined_set['h1n1_vaccine'], data=joined_set, ax = axes[0,0]).set_title('H1N1 Vaccine')
 sns.countplot( x = joined_set['opinion_seas_risk'], hue =joined_set['seasonal_vaccine'], data=joined_set, ax = axes[0,1]).set_title('Seasonal Vaccine')
@@ -55,21 +55,15 @@ sns.countplot( x = joined_set['opinion_seas_risk'], hue =joined_set['seasonal_va
 sns.countplot( x = joined_set['opinion_h1n1_risk'], hue =joined_set['h1n1_vaccine'], data=joined_set, ax = axes[1,0]).legend_.remove()
 sns.countplot( x = joined_set['opinion_h1n1_risk'], hue =joined_set['seasonal_vaccine'], data=joined_set, ax = axes[1,1]).legend_.remove()
 
-sns.countplot( x = joined_set['education'], hue =joined_set['h1n1_vaccine'], data=joined_set, ax = axes[2,0], order = order_education).set_xticklabels(order_education, rotation=12)
+sns.countplot( x = joined_set['education'], hue =joined_set['h1n1_vaccine'], data=joined_set, ax = axes[2,0], order = order_education).set_xticklabels(order_education, rotation=20)
 sns.countplot( x = joined_set['education'], hue =joined_set['h1n1_vaccine'], data=joined_set, ax = axes[2,0], order = order_education).legend_.remove()
-sns.countplot( x = joined_set['education'], hue =joined_set['seasonal_vaccine'], data=joined_set, ax = axes[2,1], order = order_education).set_xticklabels(order_education, rotation = 12)
+sns.countplot( x = joined_set['education'], hue =joined_set['seasonal_vaccine'], data=joined_set, ax = axes[2,1], order = order_education).set_xticklabels(order_education, rotation = 20)
 sns.countplot( x = joined_set['education'], hue =joined_set['seasonal_vaccine'], data=joined_set, ax = axes[2,1], order = order_education).legend_.remove()
 
-sns.countplot( x = joined_set['age_group'], hue =joined_set['h1n1_vaccine'], data=joined_set, ax = axes[3, 0], order = order_age).set_xticklabels(order_age, rotation=12)
+sns.countplot( x = joined_set['age_group'], hue =joined_set['h1n1_vaccine'], data=joined_set, ax = axes[3, 0], order = order_age).set_xticklabels(order_age, rotation=20)
 sns.countplot( x = joined_set['age_group'], hue =joined_set['h1n1_vaccine'], data=joined_set, ax = axes[3, 0], order = order_age).legend_.remove()
-sns.countplot( x = joined_set['age_group'], hue =joined_set['seasonal_vaccine'], data=joined_set, ax = axes[3,1], order = order_age).set_xticklabels(order_age, rotation=12)
+sns.countplot( x = joined_set['age_group'], hue =joined_set['seasonal_vaccine'], data=joined_set, ax = axes[3,1], order = order_age).set_xticklabels(order_age, rotation=20)
 sns.countplot( x = joined_set['age_group'], hue =joined_set['seasonal_vaccine'], data=joined_set, ax = axes[3,1], order = order_age).legend_.remove()
-
-sns.countplot( x = joined_set['behavioral_face_mask'], hue =joined_set['h1n1_vaccine'], data=joined_set, ax = axes[4,0]).legend_.remove()
-sns.countplot( x = joined_set['behavioral_face_mask'], hue =joined_set['seasonal_vaccine'], data=joined_set, ax = axes[4,1]).legend_.remove()
-
-sns.countplot( x = joined_set['behavioral_wash_hands'], hue =joined_set['h1n1_vaccine'], data=joined_set, ax = axes[5,0]).legend_.remove()
-sns.countplot( x = joined_set['behavioral_wash_hands'], hue =joined_set['seasonal_vaccine'], data=joined_set, ax = axes[5,1]).legend_.remove()
 
 f.tight_layout(pad = 0.5)
 plt.show()
