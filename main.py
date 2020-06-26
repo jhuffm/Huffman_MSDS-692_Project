@@ -14,14 +14,15 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import roc_curve, roc_auc_score
+from sklearn.metrics import multilabel_confusion_matrix
 from scipy.stats import uniform
 from skopt import BayesSearchCV
 import matplotlib.pyplot as plt
 
-training_set_features = pd.read_csv("https://s3.amazonaws.com/drivendata-prod/data/66/public/training_set_features.csv", index_col = 'respondent_id')
-training_set_labels = pd.read_csv("https://s3.amazonaws.com/drivendata-prod/data/66/public/training_set_labels.csv", index_col = 'respondent_id')
-test_set_features = pd.read_csv("https://s3.amazonaws.com/drivendata-prod/data/66/public/test_set_features.csv", index_col = 'respondent_id')
-submission_format = pd.read_csv("https://s3.amazonaws.com/drivendata-prod/data/66/public/submission_format.csv", index_col = 'respondent_id')
+training_set_features = pd.read_csv("https://raw.githubusercontent.com/jhuffm/Huffman_MSDS-692_Project/master/data/training_set_features.csv", index_col = 'respondent_id')
+training_set_labels = pd.read_csv("https://raw.githubusercontent.com/jhuffm/Huffman_MSDS-692_Project/master/data/training_set_labels.csv", index_col = 'respondent_id')
+test_set_features = pd.read_csv("https://raw.githubusercontent.com/jhuffm/Huffman_MSDS-692_Project/master/data/test_set_features.csv", index_col = 'respondent_id')
+submission_format = pd.read_csv("https://raw.githubusercontent.com/jhuffm/Huffman_MSDS-692_Project/master/data/submission_format.csv", index_col = 'respondent_id')
 
 ##Exploratory Data Analysis
 print(training_set_features.head())
@@ -34,8 +35,8 @@ print(training_set_features.describe())
 print(training_set_labels['h1n1_vaccine'].value_counts())
 print(training_set_labels['seasonal_vaccine'].value_counts())
 
-#training_set_features.plot(kind = 'hist', subplots=True, layout=(5,5), figsize=(20,20), sharey=True, title = 'Frequency Plots of Categorical Variables')
-#plt.show()
+training_set_features.plot(kind = 'hist', subplots=True, layout=(5,5), figsize=(20,20), sharey=True, title = 'Frequency Plots of Categorical Variables')
+plt.show()
 
 ##Visualizations
 joined_set = training_set_features.join(training_set_labels)
@@ -228,8 +229,13 @@ random_forest_Bayes_optimized_classifier = BayesSearchCV(
 fit_model(random_forest_Bayes_optimized_classifier, X_train, y_train, X_test)
 print(random_forest_Bayes_optimized_classifier.best_estimator_)
 
-## Retrain best model on full dataset and fit to test_set_features
+#Show Confusion Matrix
 random_forest_optim = MultiOutputClassifier(RandomForestClassifier(n_estimators = 2000, max_depth = 20, min_samples_split = 20, min_samples_leaf = 4, max_features= 'auto')) 
+classifier = random_forest_optim.fit(X_train, y_train)
+cm = multilabel_confusion_matrix(y_test, random_forest_optim.predict(X_test))
+print(cm)
+
+## Retrain best model on full dataset and fit to test_set_features
 random_forest_optim.fit(scaled_training_features, training_set_labels)
 preds = random_forest_optim.predict_proba(scaled_test_features)
 
