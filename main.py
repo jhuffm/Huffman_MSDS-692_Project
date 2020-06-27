@@ -40,6 +40,7 @@ plt.show()
 
 ##Visualizations
 joined_set = training_set_features.join(training_set_labels)
+joined_set2 = training_set_features.join(training_set_labels)
 joined_set['h1n1_vaccine'] = joined_set['h1n1_vaccine'].replace(0, 'Not Vaccinated')
 joined_set['h1n1_vaccine'] = joined_set['h1n1_vaccine'].replace(1, 'Vaccinated')
 joined_set['seasonal_vaccine'] = joined_set['seasonal_vaccine'].replace(0, 'Not Vaccinated')
@@ -113,7 +114,7 @@ test_set_features['income_poverty'] = labels
 
 ###Plot correlations in training set to see if any variables are highly correlated
 fig, ax = plt.subplots(figsize=(20,20))
-corr = joined_set.corr()
+corr = joined_set2.corr()
 htmp = sns.heatmap(
     corr, 
     vmin=-1, vmax=1, center=0,
